@@ -7,7 +7,7 @@ Original file is located at
     https://colab.research.google.com/drive/1WD1HVA1-cHtNuiIxxqidWRY_ywuzEBT5
 """
 
-!pip install tigramite
+# !pip install tigramite
 
 import numpy as np
 import pandas as pd
@@ -15,6 +15,7 @@ from tigramite import plotting as tp
 import matplotlib.pyplot as plt
 from pathlib import Path
 from scipy import stats
+import os
 
 def get_linear_equations(n_vars, max_lag):
     """Get linear equations for specified configuration"""
@@ -233,7 +234,7 @@ def extract_linear_links(equations):
 
     return links
 
-def save_dataset_and_graph(df, n_vars, max_lag, sample_size, noise_type, output_dir="output"):
+def save_dataset_and_graph(df, n_vars, max_lag, sample_size, noise_type, output_dir):
     """Save dataset and create causal graph"""
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
@@ -263,6 +264,10 @@ def save_dataset_and_graph(df, n_vars, max_lag, sample_size, noise_type, output_
         # For contemporaneous links, make val_matrix symmetric
         if lag == 0:
             val_matrix[target_idx, source_idx, lag_idx] = weight
+
+    #### this is by me
+    np.save(os.path.join(output_dir, f"val_matrix_vars{n_vars}_lag{max_lag}.npy"), val_matrix)
+    np.save(os.path.join(output_dir, f"graph_matrix_vars{n_vars}_lag{max_lag}.npy"), graph_matrix)
 
     # Plot and save causal graph
     plt.figure(figsize=(12, 12))
@@ -300,7 +305,7 @@ def save_dataset_and_graph(df, n_vars, max_lag, sample_size, noise_type, output_
         for (source, lag, target), coef in true_links.items():
             f.write(f"({source}, {lag}, {target}) => {coef}\n")
 
-def generate_all_combinations():
+def generate_all_combinations(output_dir="output"):
     """Generate datasets for all combinations"""
     n_vars_list = [4, 6, 8]
     max_lags = [2, 3, 4]
@@ -335,7 +340,7 @@ def generate_all_combinations():
                     )
 
                     # Save dataset and create visualizations
-                    save_dataset_and_graph(df, vars, lag, n, noise_type)
+                    save_dataset_and_graph(df, vars, lag, n, noise_type,output_dir)
                     print(f"Dataset and visualizations saved successfully")
 
 # Function to verify generation is working properly
@@ -370,15 +375,15 @@ def test_generator(n_points=20, n_vars=4, max_lag=2, noise_type='gaussian'):
 
     return df
 
-if __name__ == "__main__":
-    # First run a test to verify everything works
-    print("Testing generator with small dataset...")
-    test_df = test_generator(n_points=50, n_vars=4, max_lag=2, noise_type='gaussian')
+# if __name__ == "__main__":
+#     # First run a test to verify everything works
+#     print("Testing generator with small dataset...")
+#     test_df = test_generator(n_points=50, n_vars=4, max_lag=2, noise_type='gaussian')
 
-    # If everything looks good, generate all combinations
-    print("\nStarting generation of all combinations...")
-    generate_all_combinations()
+#     # If everything looks good, generate all combinations
+#     print("\nStarting generation of all combinations...")
+#     generate_all_combinations()
 
-!zip -r /content/output_A1.zip /content/output
-from google.colab import files
-files.download('/content/output_A1.zip')
+# !zip -r /content/output_A1.zip /content/output
+# from google.colab import files
+# files.download('/content/output_A1.zip')
