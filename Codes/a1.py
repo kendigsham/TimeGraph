@@ -265,7 +265,7 @@ def save_dataset_and_graph(df, n_vars, max_lag, sample_size, noise_type, output_
         if lag == 0:
             val_matrix[target_idx, source_idx, lag_idx] = weight
 
-    #### this is by me
+    #### this is by Kendig Sham
     np.save(os.path.join(output_dir, f"val_matrix_vars{n_vars}_lag{max_lag}.npy"), val_matrix)
     np.save(os.path.join(output_dir, f"graph_matrix_vars{n_vars}_lag{max_lag}.npy"), graph_matrix)
 
