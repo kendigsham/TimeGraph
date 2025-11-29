@@ -18,19 +18,25 @@ def adjmatrix_to_causal_tensor(adj_df: pd.DataFrame, strict: bool = True):
     Inputs:
     - adj_df: pandas DataFrame square (rows/cols are the same ordered lagged variable names).
               Values must be integers using the translate.graph_to_matrix encoding:
-              0=NULL, 1=CIRCLE, 2=ARROW, 3=TAIL.
-    - strict: If True, only treat pairs (2,3) as directed u -> v (most conservative).
-              If False, treat any (2, !=0) as u -> v (more permissive; e.g. o-> is accepted).
+              0 = NULL, 1 = CIRCLE, 2 = ARROW, 3 = TAIL.
+
+    Modes:
+    - strict=True: treat an ordered pair (u,v) as u -> v only when (a_uv, a_vu) == (TAIL, ARROW),
+      i.e., tail on u side and arrowhead on v side.
+    - strict=False (permissive): treat u -> v if v side has an ARROW_HEAD (a_vu == ARROW) and
+      u side is not NULL (a_uv != NULL). This accepts partially oriented cases like (circle, arrow)
+      as evidence of an arrow into v (u -> v), but is intentionally permissive.
 
     Returns:
     - tensor: boolean numpy array shape (n_vars, n_vars, max_lag+1) where tensor[i,j,k]==True
-              means "variable i at lag k -> variable j at lag 0" (i is source variable index,
-              j is target variable index, k is lag). Lag 0 denotes contemporaneous slice.
-              Note: source lag k corresponds to source variable at time t-k, target is at time t.
-    - var_names: list of base variable names (no lag suffix) in the order of indices used
+              means "variable i at lag k -> variable j at lag 0". (source index i, target j,
+              k = how many steps back the source is from the target).
+    - base_order: list of base variable names (no lag suffix) in the order of indices used.
     - max_lag: integer maximum lag found
-    - info: dict with mappings and counts
+    - info: dict with mappings, e.g. name_to_idxlag
     """
+    NULL, CIRCLE, ARROW, TAIL = 0, 1, 2, 3
+
     # sanity checks
     if adj_df.shape[0] != adj_df.shape[1]:
         raise ValueError("adj_df must be square")
@@ -76,17 +82,17 @@ def adjmatrix_to_causal_tensor(adj_df: pd.DataFrame, strict: bool = True):
                 continue
             a_uv = int(adj_df.at[u_name, v_name])
             a_vu = int(adj_df.at[v_name, u_name])
-            if a_uv == 0 and a_vu == 0:
+            if a_uv == NULL and a_vu == NULL:
                 continue  # no adjacency
 
             # Determine directedness
             is_u_to_v = False
             if strict:
-                if a_uv == 2 and a_vu == 3:
+                if a_uv == TAIL and a_vu == ARROW:
                     is_u_to_v = True
             else:
                 # permissive: any ARROW at u side counts as arrow from u to v if v side non-null
-                if a_uv == 2 and a_vu != 0:
+                if a_uv != NULL and a_vu == ARROW:
                     is_u_to_v = True
 
             if not is_u_to_v:
