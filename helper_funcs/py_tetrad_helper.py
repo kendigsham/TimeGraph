@@ -147,3 +147,37 @@ def pretty_print_tensor(tensor: np.ndarray, base_vars: List[str]):
             print(e)
 
 
+
+# --- helper to construct lagged DataFrame ---
+def make_lagged_df(df: pd.DataFrame, num_lags: int) -> pd.DataFrame:
+    """Return a DataFrame with columns var_0 (current), var_1 (t-1), ..., var_L (t-L)."""
+    cols = list(df.columns)
+    out_rows = []
+    for t in range(num_lags, len(df)):
+        row = {}
+        # current values (lag 0)
+        for v in cols:
+            row[f"{v}_0"] = df.iloc[t][v]
+        # past values
+        for lag in range(1, num_lags + 1):
+            for v in cols:
+                row[f"{v}_{lag}"] = df.iloc[t - lag][v]
+        out_rows.append(row)
+    return pd.DataFrame(out_rows)
+
+
+def create_lagged_df(df: pd.DataFrame, num_lags: int) -> pd.DataFrame:
+    # df rows must be ordered in time ascending (oldest first).
+
+    vars_cols = list(df.columns)
+
+    parts = []
+    for lag in range(0, num_lags + 1):
+        shifted = df[vars_cols].shift(lag).copy()
+        shifted.columns = [f"{c}_{lag}" for c in vars_cols]   # names: X1_0, X1_1, ...
+        parts.append(shifted)
+
+    lagged = pd.concat(parts, axis=1).dropna().reset_index(drop=True)
+    return lagged
+
+
