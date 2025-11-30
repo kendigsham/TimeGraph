@@ -18,7 +18,7 @@ def adjmatrix_to_causal_tensor(adj_df: pd.DataFrame, strict: bool = True):
     Inputs:
     - adj_df: pandas DataFrame square (rows/cols are the same ordered lagged variable names).
               Values must be integers using the translate.graph_to_matrix encoding:
-              0 = NULL, 1 = CIRCLE, 2 = ARROW, 3 = TAIL.
+              0 = NULL, 1 = CIRCLE, 2 = TAIL, 3 = ARROW.
 
     Modes:
     - strict=True: treat an ordered pair (u,v) as u -> v only when (a_uv, a_vu) == (TAIL, ARROW),
@@ -35,7 +35,7 @@ def adjmatrix_to_causal_tensor(adj_df: pd.DataFrame, strict: bool = True):
     - max_lag: integer maximum lag found
     - info: dict with mappings, e.g. name_to_idxlag
     """
-    NULL, CIRCLE, ARROW, TAIL = 0, 1, 2, 3
+    NULL, CIRCLE, TAIL, ARROW = 0, 1, 2, 3
 
     # sanity checks
     if adj_df.shape[0] != adj_df.shape[1]:
@@ -116,10 +116,11 @@ def adjmatrix_to_causal_tensor(adj_df: pd.DataFrame, strict: bool = True):
             # If normalized_lag < 0, that would be an edge from a future node to a past node (shouldn't occur).
             if normalized_lag < 0:
                 # skip or continue (could also record with sign)
-                continue
+                print(f"Warning: skipping edge from {u_name} to {v_name} with negative normalized lag {normalized_lag}")
 
             if normalized_lag > L:
                 # shouldn't happen but guard
+                print(f"Warning: skipping edge from {u_name} to {v_name} with normalized lag {normalized_lag} > max lag {L}")
                 continue
 
             tensor[src_idx, tgt_idx, normalized_lag] = True
