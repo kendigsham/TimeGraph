@@ -11,6 +11,9 @@ def parse_lagged_name(name: str) -> Tuple[str,int]:
         return name, 0
     return m.group(1), int(m.group(2))
 
+
+### interpretation of the arrows and tail encoding
+### https://rdrr.io/cran/pcalg/man/amatType.html#:~:text=in%20Package%20'pcalg'-,In%20pcalg:%20Methods%20for%20Graphical%20Models%20and%20Causal%20Inference,gac%20and%20the%20examples%20below).
 def adjmatrix_to_causal_tensor(adj_df: pd.DataFrame, strict: bool = True):
     """
     Convert Tetrad endpoint adjacency matrix (DataFrame) to a causal tensor.
